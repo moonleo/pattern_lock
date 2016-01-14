@@ -35,11 +35,14 @@ public class PatternView extends View {
     private Bitmap mPressedBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.bitmap_pressed);//按下图片
     private Bitmap mErrorBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.bitmap_error);//错误图片
 
+    private int mBitmapRadius = mNormalBitmap.getWidth() >> 1;//圆形图片半径
+
     private Bitmap mPressedLine = BitmapFactory.decodeResource(getResources(), R.drawable.line_pressed);//按下连线
     private Bitmap mErrorLine = BitmapFactory.decodeResource(getResources(), R.drawable.line_error);//错误连线
 
-    boolean isPatternInit;//是否已经初始化
-    boolean isBegin;//是否已经开始绘制图案
+    private boolean isPatternInit;//是否已经初始化
+    private boolean isBegin;//是否已经开始绘制图案
+    private boolean isFinished;//是否已经结束绘制图案
 
     private float mScreenX, mScreenY;
 
@@ -165,7 +168,7 @@ public class PatternView extends View {
             for(int j=0; j<mPointNum; j++) {
                 mPoints[i][j] = new Point(paddingLeft + j * patternSpace,
                         paddingTop + i * patternSpace);
-                mPoints[i][j].setIndex(i * mPointNum + j + 1);
+                mPoints[i][j].setIndex(i * mPointNum + j);
             }
         }
     }
@@ -174,23 +177,25 @@ public class PatternView extends View {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         int action = event.getAction();
+        //获取屏幕上的坐标
         mScreenX = event.getX();
         mScreenY = event.getY();
-        Log.d(TAG, ""+mScreenX+" "+mScreenY);
         Point p;
         switch (action) {
             case MotionEvent.ACTION_DOWN:
-                for(int i=0; i<mPointNum; i++) {
-                    for(int j=0; j<mPointNum; j++) {
-                        p = mPoints[i][j];
-                        if(!p.getStatus().equals(Status.pressed)) {
-                            if(p.intersect(mScreenX, mScreenY, mNormalBitmap.getWidth() >> 1)) {
-                                if(!mSelectedPoints.contains(p)) {
-                                    p.setStatus(Status.pressed);
-                                    mSelectedPoints.add(p);
-                                    mLastSelectedPoint = p;
-                                    isBegin = true;
-                                    break;
+                if(!isFinished) {
+                    for(int i=0; i<mPointNum; i++) {
+                        for(int j=0; j<mPointNum; j++) {
+                            p = mPoints[i][j];
+                            if(!p.getStatus().equals(Status.pressed)) {
+                                if(p.intersect(mScreenX, mScreenY, mNormalBitmap.getWidth() >> 1)) {
+                                    if(!mSelectedPoints.contains(p)) {
+                                        p.setStatus(Status.pressed);
+                                        mSelectedPoints.add(p);
+                                        mLastSelectedPoint = p;
+                                        isBegin = true;
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -202,8 +207,18 @@ public class PatternView extends View {
                     for(int j=0; j<mPointNum; j++) {
                         p = mPoints[i][j];
                         if(!p.getStatus().equals(Status.pressed)) {
-                            if(p.intersect(mScreenX, mScreenY, mNormalBitmap.getWidth() >> 1)) {
-                                if(!mSelectedPoints.contains(p)) {
+                            if(p.intersect(mScreenX, mScreenY, mBitmapRadius)) {
+                                if(p.getStatus().equals(Status.normal)) {
+                                    //两点之间的点
+                                    if(null != mLastSelectedPoint) {
+                                        int sumIndex = mLastSelectedPoint.getIndex() + p.getIndex();
+                                        Point mid = mPoints[(sumIndex>>1)/mPointNum][(sumIndex>>1)%mPointNum];
+                                        if(mid.intersect((mLastSelectedPoint.getX()+p.getX())/2,
+                                                (mLastSelectedPoint.getY()+p.getY())/2, mBitmapRadius)) {
+                                            mid.setStatus(Status.pressed);
+                                            mSelectedPoints.add(mid);
+                                        }
+                                    }
                                     p.setStatus(Status.pressed);
                                     mSelectedPoints.add(p);
                                     mLastSelectedPoint = p;
@@ -216,7 +231,9 @@ public class PatternView extends View {
                 }
                 break;
             case MotionEvent.ACTION_UP:
-                isBegin = false;//停止绘制
+                //停止绘制
+                isBegin = false;
+                isFinished = true;
                 //停止绘制，检查点数是否满足要求
                 checkPattern();
                 break;
