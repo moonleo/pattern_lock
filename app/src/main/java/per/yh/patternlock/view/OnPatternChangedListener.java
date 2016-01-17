@@ -1,7 +1,7 @@
 package per.yh.patternlock.view;
 
 /**
- * Created by MoonLeo on 2016/1/17.
+ * Created by MoonLeo on 2016/1/16.
  * 图案变化监听器
  */
 public interface OnPatternChangedListener {
