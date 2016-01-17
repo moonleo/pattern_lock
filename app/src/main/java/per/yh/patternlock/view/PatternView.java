@@ -8,7 +8,6 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -49,7 +48,9 @@ public class PatternView extends View {
     private Point mLastSelectedPoint;//上一次选中的点
     private List<Point> mSelectedPoints = new ArrayList<>();//已经选择的点
 
-    private static final int MIN_POINT_NUM = 4;//绘制所需的最少点数
+    public static final int MIN_POINT_NUM = 4;//绘制所需的最少点数
+
+    private OnPatternChangedListener onPatternChangedListener;//画图监听器
 
     public PatternView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -166,6 +167,7 @@ public class PatternView extends View {
         }
         for(int i=0; i<mPointNum; i++) {
             for(int j=0; j<mPointNum; j++) {
+                //设置点的坐标和索引
                 mPoints[i][j] = new Point(paddingLeft + j * patternSpace,
                         paddingTop + i * patternSpace);
                 mPoints[i][j].setIndex(i * mPointNum + j);
@@ -183,6 +185,10 @@ public class PatternView extends View {
         Point p;
         switch (action) {
             case MotionEvent.ACTION_DOWN:
+                reset();//重置所有点
+                if(null != onPatternChangedListener) {
+                    onPatternChangedListener.patternStart(true);
+                }
                 if(!isFinished) {
                     for(int i=0; i<mPointNum; i++) {
                         for(int j=0; j<mPointNum; j++) {
@@ -236,7 +242,6 @@ public class PatternView extends View {
                 isFinished = true;
                 //停止绘制，检查点数是否满足要求
                 checkPattern();
-                break;
         }
         postInvalidate();
         return true;
@@ -245,16 +250,44 @@ public class PatternView extends View {
     /**
      * 停止绘制，检查点数是否满足要求
      */
-    private boolean checkPattern() {
+    private void checkPattern() {
+        if(mSelectedPoints.size() <= 1) {
+            reset();
+        }
         //选择的点数小于所需最少点数
-        if(mSelectedPoints.size() < MIN_POINT_NUM) {
+        else if(mSelectedPoints.size() > 1 && mSelectedPoints.size() < MIN_POINT_NUM) {
             //将已选择点的状态都设为错误
             for(Point p: mSelectedPoints) {
                 p.setStatus(Status.error);
             }
-            return false;
+            if(null != onPatternChangedListener) {
+                onPatternChangedListener.patternChanged(null);
+            }
+        } else {
+            if(null != onPatternChangedListener) {
+                String pw = "";
+                for(Point p: mSelectedPoints) {
+                    pw += p.getIndex();
+                }
+                onPatternChangedListener.patternChanged(pw);
+            }
         }
-        return true;
+    }
+
+    /**
+     * 重置已选点，重置图形
+     */
+    public void reset() {
+        for(Point p: mSelectedPoints) {
+            p.setStatus(Status.normal);
+        }
+        mSelectedPoints.clear();
+    }
+
+    public void setOnPatternChangedListener(OnPatternChangedListener onPatternChangedListener) {
+        if(null != onPatternChangedListener) {
+            this.onPatternChangedListener = onPatternChangedListener;
+        }
     }
 }
 
