@@ -7,15 +7,42 @@
         android:id="@+id/tv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="请绘制图案"
+        android:text="请设置密码"
         android:textSize="20sp"
         android:paddingTop="50dp"
         android:textStyle="bold"
-        android:layout_centerHorizontal="true"/>
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentTop="true"/>
     
     <per.yh.patternlock.view.PatternView
         android:id="@+id/pattern"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
     </per.yh.patternlock.view.PatternView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_alignParentBottom="true">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="当前密码："
+            android:gravity="center"/>
+        <TextView
+            android:id="@+id/tv_password"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:gravity="center"/>
+        <Button
+            android:id="@+id/btn_reset"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="重置"
+            android:padding="10dp"/>
+    </LinearLayout>
 </RelativeLayout>

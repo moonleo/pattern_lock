@@ -7,4 +7,5 @@ package per.yh.patternlock.view;
 public interface OnPatternChangedListener {
     void patternChanged(String password);
     void patternStart(boolean start);
+    void passwordSetted(String password);
 }

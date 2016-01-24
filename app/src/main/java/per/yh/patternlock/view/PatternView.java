@@ -6,8 +6,10 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -43,7 +45,7 @@ public class PatternView extends View {
     private boolean isBegin;//是否已经开始绘制图案
     private boolean isFinished;//是否已经结束绘制图案
 
-    private float mScreenX, mScreenY;
+    private float mScreenX, mScreenY;//手指滑动时屏幕上点坐标
 
     private Point mLastSelectedPoint;//上一次选中的点
     private List<Point> mSelectedPoints = new ArrayList<>();//已经选择的点
@@ -52,6 +54,8 @@ public class PatternView extends View {
 
     private OnPatternChangedListener onPatternChangedListener;//画图监听器
 
+    private String password;//保存设置的密码
+
     public PatternView(Context context, AttributeSet attrs) {
         super(context, attrs);
         WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
@@ -59,6 +63,16 @@ public class PatternView extends View {
         wm.getDefaultDisplay().getMetrics(metrics);
         mScreenWidth = metrics.widthPixels;
         mScreenHeight = metrics.heightPixels;
+        setPassword("");
+        Log.d(TAG, "gouzao fangfa");
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     @Override
@@ -257,9 +271,7 @@ public class PatternView extends View {
         //选择的点数小于所需最少点数
         else if(mSelectedPoints.size() > 1 && mSelectedPoints.size() < MIN_POINT_NUM) {
             //将已选择点的状态都设为错误
-            for(Point p: mSelectedPoints) {
-                p.setStatus(Status.error);
-            }
+            setSelectPoints2Error();
             if(null != onPatternChangedListener) {
                 onPatternChangedListener.patternChanged(null);
             }
@@ -269,19 +281,43 @@ public class PatternView extends View {
                 for(Point p: mSelectedPoints) {
                     pw += p.getIndex();
                 }
-                onPatternChangedListener.patternChanged(pw);
+                if(TextUtils.isEmpty(getPassword())) {
+                    setPassword(pw);
+                    onPatternChangedListener.passwordSetted(pw);
+                } else {
+                    if(!pw.equals(getPassword()))
+                        setSelectPoints2Error();
+                    onPatternChangedListener.patternChanged(pw);
+                }
+
             }
+        }
+    }
+
+    /**
+     * 将选中的点状态置为error
+     */
+    private void setSelectPoints2Error() {
+        for(Point p: mSelectedPoints) {
+            p.setStatus(Status.error);
         }
     }
 
     /**
      * 重置已选点，重置图形
      */
-    public void reset() {
+    private void reset() {
         for(Point p: mSelectedPoints) {
             p.setStatus(Status.normal);
         }
         mSelectedPoints.clear();
+    }
+
+    public void resetPoints() {
+        reset();
+        setPassword("");
+        onPatternChangedListener.passwordSetted(getPassword());
+        postInvalidate();
     }
 
     public void setOnPatternChangedListener(OnPatternChangedListener onPatternChangedListener) {
